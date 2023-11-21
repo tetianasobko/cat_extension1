@@ -5,8 +5,8 @@ canvas.width = innerWidth;
 canvas.height = innerHeight;
 
 let mouse = { x: innerWidth / 2, y: innerHeight / 2 };
-let countMethodInvoked = 0;
 let sitCount = 1;
+let then = performance.now();
 
 canvas.addEventListener("mousedown", (e) => {
   if (
@@ -27,9 +27,7 @@ class Cat {
     this.image = new Image();
     this.frame = 0;
     this.isLeft = true;
-    this.lastFrameTime = performance.now(); // To store the time of the last frame
-    this.animationSpeed = 0.009;
-    this.speed = 0.2;
+    this.speed = 1.4;
   }
 
   draw() {
@@ -41,12 +39,15 @@ class Cat {
   }
 
   driveToTarget() {
+    const fps = 6;
+    const interval = 1000 / fps;
     const currentTime = performance.now();
-    const deltaTime = currentTime - this.lastFrameTime;
-    this.lastFrameTime = currentTime;
+    let deltaTime = currentTime - then;
 
-    // Calculate frame changes based on deltaTime
-    this.frame += this.animationSpeed * deltaTime;
+    if (deltaTime > interval) {
+      then = currentTime - (deltaTime % interval);
+      this.frame++;
+    }
 
     // Normalize vector
     let vecX = mouse.x - this.x;
@@ -66,17 +67,15 @@ class Cat {
         this.changeAction("walks", 7);
       }
 
-      this.x += vecX * deltaTime * this.speed * 0.75; // Multiply by deltaTime for time-based movement
-      this.y += vecY * deltaTime * this.speed; // Multiply by deltaTime for time-based movement
+      this.x += vecX * this.speed * 0.8; // Multiply by deltaTime for time-based movement
+      this.y += vecY * this.speed; // Multiply by deltaTime for time-based movement
     } else if (sitCount % 530 === 0) {
       if (this.frame >= 17) {
         sitCount++;
       }
-
       this.changeAction("licks", 18);
     } else {
       sitCount++;
-
       this.changeAction("sits", 5);
     }  
   }
