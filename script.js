@@ -5,7 +5,7 @@ canvas.width = innerWidth;
 canvas.height = innerHeight;
 
 let mouse = { x: innerWidth / 2, y: innerHeight / 2 };
-let countMethodInvoke = 0;
+let countMethodInvoked = 0;
 let sitCount = 1;
 
 canvas.addEventListener("mousedown", (e) => {
@@ -27,66 +27,67 @@ class Cat {
     this.image = new Image();
     this.frame = 0;
     this.isLeft = true;
+    this.lastFrameTime = performance.now(); // To store the time of the last frame
+    this.animationSpeed = 0.009;
+    this.speed = 0.2;
   }
+
   draw() {
     ctx.save();
-
     //use translate to move the cat
     ctx.translate(this.x, this.y);
-
     ctx.drawImage(this.image, -40, -40, 80, 80);
     ctx.restore();
   }
 
   driveToTarget() {
-    //normalize vector
+    const currentTime = performance.now();
+    const deltaTime = currentTime - this.lastFrameTime;
+    this.lastFrameTime = currentTime;
+
+    // Calculate frame changes based on deltaTime
+    this.frame += this.animationSpeed * deltaTime;
+
+    // Normalize vector
     let vecX = mouse.x - this.x;
     let vecY = mouse.y - this.y;
     let dist = Math.hypot(vecX, vecY);
     vecX /= dist;
     vecY /= dist;
 
-    //set the frame rate
-    countMethodInvoke += 1;
-    if (countMethodInvoke % 9 == 0) {
-      this.frame++;
-    }
-
-    //Prevent continuous x and y increment by checking if either vec == 0
-    if (vecX != 0 || vecY != 0) {
-      if (
-        this.x >= mouse.x + 10 ||
-        this.x <= mouse.x - 10 ||
-        this.y >= mouse.y + 10 ||
-        this.y <= mouse.y - 10
-      ) {
-        if (!this.direction()) {
-          this.changeAction("walks", 7);
-        }
-
-        this.x += vecX * 1.25; //multiple VecX by n to increase speed
-        this.y += vecY * 1.25; //multiple VecY by n to increase speed
-      } else if (sitCount % 530 == 0) {
-        if (this.frame == 17) {
-          sitCount++;
-        }
-
-        this.changeAction("licks", 18);
-      } else {
-        sitCount++;
-
-        this.changeAction("sits", 5);
+    // Move the cat towards the mouse position
+    if (
+      this.x >= mouse.x + 10 ||
+      this.x <= mouse.x - 10 ||
+      this.y >= mouse.y + 10 ||
+      this.y <= mouse.y - 10
+    ) {
+      if (!this.direction()) {
+        this.changeAction("walks", 7);
       }
-    }
+
+      this.x += vecX * deltaTime * this.speed * 0.75; // Multiply by deltaTime for time-based movement
+      this.y += vecY * deltaTime * this.speed; // Multiply by deltaTime for time-based movement
+    } else if (sitCount % 530 === 0) {
+      if (this.frame >= 17) {
+        sitCount++;
+      }
+
+      this.changeAction("licks", 18);
+    } else {
+      sitCount++;
+
+      this.changeAction("sits", 5);
+    }  
   }
 
   changeAction(newAction, frameNumber) {
     this.frame %= frameNumber;
 
     if (this.isLeft) {
-      this.image.src = `images/cat_${newAction}_left_${this.frame}.png`;
+      this.image.src = `images/cat_${newAction}_left_${Math.floor(this.frame)}.png`;
     } else {
-      this.image.src = `images/cat_${newAction}_${this.frame}.png`;
+      this.image.src = `images/cat_${newAction}_${Math.floor(this.frame)}.png`;
     }
   }
 
